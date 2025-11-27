@@ -5,7 +5,7 @@ import os
 
 from problem import Problem
 
-def create_VMP_MOMILP_File(problem: Problem, output_filename=None):
+def create_VMP_MOMILP_File(problem, output_filename=None):
 	N_V = problem.N_V
 	N_P = problem.N_P
 	v_cpu = problem.v_cpu

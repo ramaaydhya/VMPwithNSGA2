@@ -9,7 +9,7 @@ from problem import Problem
 
 class NSGA2(ABC):
 	def __init__(self, problem, populationSize=100, maxGeneration=100, crossoverProbability=0.9, mutationProbability=0.1):
-		self.problem: Problem = problem
+		self.problem = problem
 		self.populationSize: int = populationSize
 		self.maxGeneration: int = maxGeneration
 		self.crossoverProbability: float = crossoverProbability
@@ -62,7 +62,7 @@ class NSGA2(ABC):
 				self.calculateCrowdingDistance(front)
 			offspring = self.createOffspring(self.population)			
 
-	def fastNonDominatedSort(self, population: Population):
+	def fastNonDominatedSort(self, population):
 		population.fronts = [[]]
   		for individual in population:
 			individual.dominationCount = 0
@@ -87,7 +87,7 @@ class NSGA2(ABC):
 			i += 1
 			population.fronts.append(temp)
 
-	def calculateCrowdingDistance(self, front: list[Individual]):
+	def calculateCrowdingDistance(self, front):
 		if len(front) > 0:
 			individualCount = len(front)
 			for individual in front:
@@ -103,7 +103,7 @@ class NSGA2(ABC):
 	  			for i in range(1, individualCount - 1):
 					front[i].crowdingDistance += (front[i + 1].objectives[key] - front[i - 1].objectives[key]) / scale
 
-	def createOffspring(self, population: Population) -> list[Individual]:
+	def createOffspring(self, population):
 		offspringList = []
 
 		while len(offspringList) < self.populationSize:
@@ -132,7 +132,7 @@ class NSGA2(ABC):
 
 		return offspringList
 
-	def tournament(self, population: Population) -> Individual:
+	def tournament(self, population):
 		selectedIndividuals = random.sample(population.individuals, 2)
 		if selectedIndividuals[0].frontRank < selectedIndividuals[1].frontRank:
 			return selectedIndividuals[0]
@@ -153,7 +153,7 @@ class NSGA2(ABC):
 			self.population.append(ind)
 
 	# Helper function for NSGA2.generatePopulation()		
-	def _generate_chromosome_random_first_fit(self) -> list[int]:
+	def _generate_chromosome_random_first_fit(self):
 		chromosome = [-1] * self.problem.N_V
 
 		remaining_cpu = np.copy(self.problem.p_cpu)
@@ -184,7 +184,7 @@ class NSGA2(ABC):
 
 		return chromosome
 	
-	def repair(self, individual: Individual):
+	def repair(self, individual):
 		MAX_ATTEMPTS = 50 
 		attempt = 0
 		
@@ -240,13 +240,13 @@ class NSGA2(ABC):
 		individual.updateConstraintStatus()
 
 	@abstractmethod
-	def _create_individual_from_list(self, chromosome_list: list[int]) -> Individual:
+	def _create_individual_from_list(self, chromosome_list):
 		pass
 
 	@abstractmethod
-	def crossover(self, parent1: Individual, parent2: Individual) -> (Individual, Individual):
+	def crossover(self, parent1, parent2):
 		pass
 
 	@abstractmethod
-	def mutate(self, offspring: Individual):
+	def mutate(self, offspring):
 		pass

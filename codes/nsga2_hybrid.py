@@ -1,6 +1,5 @@
 import random
 import copy
-from typing import Tuple, List, Set
 
 from individual_hybrid import IndividualHybrid
 from nsga2 import NSGA2
@@ -8,16 +7,16 @@ from population import Population
 from problem import Problem
 
 class NSGA2Hybrid(NSGA2):
-	def __init__(self, population: Population, problem: Problem):
+	def __init__(self, population, problem):
 		super().__init__(population, problem)
 
-	def crossover(self, parent1: IndividualHybrid, parent2: IndividualHybrid) -> (IndividualHybrid, IndividualHybrid):
+	def crossover(self, parent1, parent2):
 		offspring_1 = self._gga_crossover(parent1, parent2)
 		offspring_2 = self._gga_crossover(parent2, parent1)
 
 		return offspring_1, offspring_2
 
-	def _gga_crossover(self, donor: IndividualHybrid, receiver: IndividualHybrid) -> IndividualHybrid:
+	def _gga_crossover(self, donor, receiver):
 		active_servers_donor = [s for s, vms in donor.server_map.items() if vms]
 
 		# Fallbackk if donor is empty (very unlikely to happen) 
@@ -29,7 +28,7 @@ class NSGA2Hybrid(NSGA2):
 		servers_to_inject = random.sample(active_servers_donor, num_inject)
 
 		offspring_server_map = {}
-		injected_vms: Set[int] = set()
+		injected_vms = set()
 
 		# ==== 1. Injection from donor ====
 		for server_idx in servers_to_inject:
@@ -67,7 +66,7 @@ class NSGA2Hybrid(NSGA2):
 		offspring.evaluateFull()
 		return offspring
 
-	def mutate(self, individual: IndividualHybrid):
+	def mutate(self, individual):
 		# Identify all active servers
 		active_servers = [s for s, vms in individual.server_map.items() if vms]
 		if not active_servers: return
@@ -116,7 +115,7 @@ class NSGA2Hybrid(NSGA2):
 		if individual.isConstraintViolated:
 			self.repair(individual)
 
-	def _create_individual_from_list(self, chromosome_list: list[int]) -> IndividualHybrid:
+	def _create_individual_from_list(self, chromosome_list):
 		server_map = {}
 		for vm_idx, server_idx in enumerate(chromosome_list):
 			if server_idx not in server_map:
@@ -125,7 +124,7 @@ class NSGA2Hybrid(NSGA2):
 
 		return IndividualHybrid(self, self.problem, server_map)
 
-	def _reinsert_vms(self, server_map: dict, unplaced_vms: list):		
+	def _reinsert_vms(self, server_map, unplaced_vms):		
 		current_cpu = {s: 0 for s in range(self.problem.N_P)}
 		current_mem = {s: 0 for s in range(self.problem.N_P)}
 		

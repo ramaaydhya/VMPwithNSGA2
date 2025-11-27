@@ -1,15 +1,13 @@
-from typing import Dict, List
-
 from individual import Individual
 
 class IndividualHybrid(Individual):
-	def __init__(self, algorithm: NSGA2, problem: Problem, server_map: Dict[int, List[int]]):
+	def __init__(self, algorithm, problem, server_map):
 		super().__init__(algorithm, problem)
 		self.server_map = server_map
 		self.vm_to_server_map: List[int] = [0] * self.problem.N_V
 		self.syncRepresentations()
 
-	def getChromosome(self) -> Dict[int, List[int]]:
+	def getChromosome(self):
 		return self.server_map
 
 	def syncRepresentations(self):
@@ -19,7 +17,7 @@ class IndividualHybrid(Individual):
 				self.chromosome_list[vm_idx] = server_idx
 				self.vm_to_server_map[vm_idx] = server_idx
 
-	def evaluateDelta(self, vm_idx: int, new_server_idx: int):
+	def evaluateDelta(self, vm_idx, new_server_idx):
 		old_server_idx = self.vm_to_server_map[vm_idx] 
 		if old_server_idx == new_server_idx:
 			return

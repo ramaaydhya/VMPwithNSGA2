@@ -3,7 +3,7 @@ import numpy as np
 class PerformanceMetrics:
 	
 	@staticmethod
-	def calculate_spacing(front: np.ndarray) -> float:
+	def calculate_spacing(front):
 		
 		if len(front) < 2:
 			return 0.0
@@ -24,7 +24,7 @@ class PerformanceMetrics:
 		return np.sqrt(sum_sq_diff / (len(front) - 1))
 
 	@staticmethod
-	def calculate_hypervolume(front: np.ndarray, ref_point: np.ndarray) -> float:
+	def calculate_hypervolume(front, ref_point):
 		"""
 		Menghitung Hypervolume untuk 2 Objektif.
 		front: Array (N, 2) yang SUDAH DINORMALISASI.
@@ -68,7 +68,7 @@ class PerformanceMetrics:
 		return np.linalg.norm(diff)
 
 	@staticmethod
-	def calculate_gd_plus(front: np.ndarray, ref_front: np.ndarray) -> float:
+	def calculate_gd_plus(front, ref_front):
 		"""
 		Generational Distance Plus (GD+).
 		Mengukur seberapa dekat Front kita ke Reference Front.
@@ -87,7 +87,7 @@ class PerformanceMetrics:
 		return np.sqrt(sum_dist) / len(front)
 
 	@staticmethod
-	def calculate_igd_plus(front: np.ndarray, ref_front: np.ndarray) -> float:
+	def calculate_igd_plus(front, ref_front):
 		"""
 		Inverted Generational Distance Plus (IGD+).
 		Mengukur konvergensi DAN diversity.

@@ -23,7 +23,7 @@ class ExperimentAnalyzer:
 		self.min_objectives = None
 		self.max_objectives = None
 
-	def addResult(self, algo_name, run_id, population: Population):
+	def addResult(self, algo_name, run_id, population):
 		"""
 		Menambahkan hasil akhir populasi dari NSGA-II.
 		Hanya mengambil solusi Rank 0 (Non-dominated) dari run tersebut.

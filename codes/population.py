@@ -1,9 +1,9 @@
 from individual import Individual
 
 class Population:
-	def __init__(self, individuals: list[Individual] = None):
+	def __init__(self, individuals = None):
 		self.individuals = individuals if individuals is not None else []
-		self.fronts: list[list[Individual]] = []
+		self.fronts = []
 
 	def __len__(self):
 		return len(self.individuals)
@@ -14,8 +14,8 @@ class Population:
 	def __getitem__(self, index):
 		return self.individuals[index]	
 
-	def extend(self, newIndividuals: list[Individual]):
+	def extend(self, newIndividuals):
 		self.individuals.extend(newIndividuals)
 
-	def append(self, newIndividual: Individual):
+	def append(self, newIndividual):
 		self.individuals.append(newIndividual)		

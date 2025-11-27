@@ -7,12 +7,12 @@ from population import Population
 from problem import Problem
 
 class NSGA2Classic(NSGA2):
-	def __init__(self, population: Population, problem: Problem):
+	def __init__(self, population, problem):
 		super().__init__(population, problem)
 
 	# Biased Uniform Crossover
 	# each gene are picked randomly biased towards fitter parent
-	def crossover(self, parent1: IndividualClassic, parent2: IndividualClassic) -> (IndividualClassic, IndividualClassic):
+	def crossover(self, parent1, parent2):
 		BIAS_RATIO = 0.7
 
 		better_parent, worse_parent = parent1, parent2
@@ -46,7 +46,7 @@ class NSGA2Classic(NSGA2):
 		return offspring_1, offspring_2
 
 	# Random Mutation
-	def mutate(self, individual: IndividualClassic):
+	def mutate(self, individual):
 		is_mutated = False
 
 		prob_per_gene = 1.0 / self.problem.N_V
@@ -65,5 +65,5 @@ class NSGA2Classic(NSGA2):
 		if is_mutated and individual.isConstraintViolated:
 			self.repair(individual)			
 
-	def _create_individual_from_list(self, chromosome_list: list[int]) -> IndividualClassic:
+	def _create_individual_from_list(self, chromosome_list):
 		return IndividualClassic(self, self.problem, chromosome_list)

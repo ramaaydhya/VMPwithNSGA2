@@ -1,19 +1,18 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from typing import List, Dict, Union
 
 from problem import Problem
 
 class Individual(ABC):
-	def __init__(self, algorithm, problem: Problem):
+	def __init__(self, algorithm, problem):
 		self.algorithm = algorithm
 		self.problem = problem
 
 		# NSGA attributes
-		self.frontRank: int = -1
-		self.crowdingDistance: float = float('nan')
-		self.dominationCount: int = -1
-		self.dominatedSolutions: List[Individual] = []
+		self.frontRank = -1
+		self.crowdingDistance = float('nan')
+		self.dominationCount = -1
+		self.dominatedSolutions = []
 
 		# Optimization attributes
 		self.objectives = {
@@ -29,8 +28,8 @@ class Individual(ABC):
 		self.isConstraintViolated: bool = False
 
 		# Solution representation
-		self.chromosome_list: List[int] = []
-		self.server_map: Dict[int, List[int]] = {}
+		self.chromosome_list = []
+		self.server_map = {}
 
 		# cache
 		self.total_cpu_per_server = np.zeros(problem.N_P)
@@ -38,7 +37,7 @@ class Individual(ABC):
 		self.total_net_per_server = np.zeros(problem.N_P)
 		self.v_net_per_vm = np.zeros(problem.N_V) 
     	
-	def dominates(self, other: Individual) -> bool:
+	def dominates(self, other):
 		if not self.isConstraintViolated and other.isConstraintViolated:
 			return True
 		elif self.isConstraintViolated and not other.isConstraintViolated:
@@ -127,7 +126,7 @@ class Individual(ABC):
 
 		self.objectives["net_communication"] = t_sum_1 + t_sum_2
 
-	def _get_power_for_server(self, server_idx: int) -> float:
+	def _get_power_for_server(self, server_idx):
 		cpu_usage = self.total_cpu_per_server[server_idx]
 		if cpu_usage <= 0:
 			return 0.0
@@ -140,7 +139,7 @@ class Individual(ABC):
 		U_j_cpu = cpu_usage / (p_cpu_j + epsilon)
 		return (PC_max_j - PC_idle_j) * U_j_cpu + PC_idle_j
 
-	def deltaUpdate_CPU_Mem_Power(self, vm_idx: int, src_server_idx: int, dst_server_idx: int):
+	def deltaUpdate_CPU_Mem_Power(self, vm_idx, src_server_idx, dst_server_idx):
 		v_cpu_i = self.problem.v_cpu[vm_idx]
 		v_mem_i = self.problem.v_mem[vm_idx]
 
@@ -164,7 +163,7 @@ class Individual(ABC):
 		self.objectives["power_consumption"] += power_delta
 
 	@abstractmethod
-	def getChromosome(self) -> Union[List[int], Dict[int, List[int]]]:
+	def getChromosome(self):
 		pass
 
 	@abstractmethod
@@ -172,5 +171,5 @@ class Individual(ABC):
 		pass
 
 	@abstractmethod
-	def evaluateDelta(self, vm_idx: int, new_server_idx: int):
+	def evaluateDelta(self, vm_idx, new_server_idx):
 		pass		

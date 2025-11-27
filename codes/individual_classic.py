@@ -1,15 +1,13 @@
-from typing import List
-
 from individual import Individual
 
 class IndividualClassic(Individual):
 
-	def __init__(self, algorithm: NSGA2, problem: Problem, chromosome_list: List[int]):
+	def __init__(self, algorithm, problem, chromosome_list):
 		super().__init__(algorithm, problem)
 		self.chromosome_list = chromosome_list
 		self.syncRepresentations()
 
-	def getChromosome(self) -> List[int]:
+	def getChromosome(self):
 		return self.chromosome_list
 
 	def syncRepresentations(self):
@@ -19,7 +17,7 @@ class IndividualClassic(Individual):
 				self.server_map[server_idx] = []
 			self.server_map[server_idx].append(vm_idx)
 
-	def evaluateDelta(self, vm_idx: int, new_server_idx: int):
+	def evaluateDelta(self, vm_idx, new_server_idx):
 		old_server_idx = self.chromosome_list[vm_idx]
 		if old_server_idx == new_server_idx:
 			return

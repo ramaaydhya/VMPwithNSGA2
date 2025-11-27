@@ -53,9 +53,9 @@ class PaMILORunner:
 				print(f"[PaMILO] Failed with return code {result.returncode}")
 				print("STDERR:", result.stderr)
 				return False
-		except:
+		except subprocess.TimeoutExpired:
 			print(f"[PaMILO] Timeout reached after {timeout_sec} seconds (Python kill).")
 			return False
-		except:
+		except Exception as e:
 			print(f"[PaMILO] Execution error: {e}")
 			return False					
