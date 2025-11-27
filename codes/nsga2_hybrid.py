@@ -7,8 +7,8 @@ from population import Population
 from problem import Problem
 
 class NSGA2Hybrid(NSGA2):
-	def __init__(self, population, problem):
-		super().__init__(population, problem)
+	def __init__(self, problem, populationSize=100, maxGeneration=100, crossoverProbability=0.9, mutationProbability=0.1):
+		super().__init__(problem, populationSize, maxGeneration, crossoverProbability, mutationProbability)
 
 	def crossover(self, parent1, parent2):
 		offspring_1 = self._gga_crossover(parent1, parent2)
