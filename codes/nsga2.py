@@ -68,22 +68,22 @@ class NSGA2(ABC):
 			individual.dominationCount = 0
 			individual.dominatedSolutions = []
 			for other in population:
-	  			if individual.dominates(other):
+				if individual.dominates(other):
 					individual.dominatedSolutions.append(other)
-	  			elif other.dominates(individual):
+				elif other.dominates(individual):
 					individual.dominationCount += 1
 			if individual.dominationCount == 0:
-	  			individual.frontRank = 0
-	  			population.fronts[0].append(individual)
-  		i = 0
-  		while len(population.fronts[i]) > 0:
+				individual.frontRank = 0
+				population.fronts[0].append(individual)
+		i = 0
+		while len(population.fronts[i]) > 0:
 			temp = []
 			for individual in population.fronts[i]:
-	  			for other in individual.dominatedSolutions:
+				for other in individual.dominatedSolutions:
 					other.dominationCount -= 1
 					if other.dominationCount == 0:
-		  				other.frontRank = i + 1
-		  				temp.append(other)
+						other.frontRank = i + 1
+						temp.append(other)
 			i += 1
 			population.fronts.append(temp)
 
@@ -91,16 +91,16 @@ class NSGA2(ABC):
 		if len(front) > 0:
 			individualCount = len(front)
 			for individual in front:
-	  			individual.crowdingDistance = 0
+				individual.crowdingDistance = 0
 
 			for key in front[0].objectives.keys():
-	  			front.sort(key=lambda x: x.objectives[key])
-	  			front[0].crowdingDistance = float('inf')
-	  			front[individualCount - 1].crowdingDistance = float('inf')
-	  			objectiveValues = [individual.objectives[key] for individual in front]
-	  			scale = max(objectiveValues) - min(objectiveValues)
-	  			scale = scale if scale != 0 else 1
-	  			for i in range(1, individualCount - 1):
+				front.sort(key=lambda x: x.objectives[key])
+				front[0].crowdingDistance = float('inf')
+				front[individualCount - 1].crowdingDistance = float('inf')
+				objectiveValues = [individual.objectives[key] for individual in front]
+				scale = max(objectiveValues) - min(objectiveValues)
+				scale = scale if scale != 0 else 1
+				for i in range(1, individualCount - 1):
 					front[i].crowdingDistance += (front[i + 1].objectives[key] - front[i - 1].objectives[key]) / scale
 
 	def createOffspring(self, population):

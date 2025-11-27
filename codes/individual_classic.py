@@ -23,14 +23,14 @@ class IndividualClassic(Individual):
 			return
 
 		self.deltaUpdate_CPU_Mem_Power(vm_idx, old_server_idx, new_server_idx)
-        
+
 		self.chromosome_list[vm_idx] = new_server_idx
 		self.server_map[old_server_idx].remove(vm_idx)
 		if new_server_idx not in self.server_map:
 			self.server_map[new_server_idx] = []
 		self.server_map[new_server_idx].append(vm_idx)
-        
+
 		self.calculateConstraint_Net()
 		self.calculateObjective_Net()
-        
+
 		self.updateConstraintStatus()						

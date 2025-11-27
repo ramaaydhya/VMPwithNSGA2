@@ -155,10 +155,10 @@ class Individual(ABC):
 		self.constraintViolations["cpu"][dst_server_idx] = np.maximum(0, self.total_cpu_per_server[dst_server_idx] - self.problem.p_cpu[dst_server_idx])
 		self.constraintViolations["mem"][src_server_idx] = np.maximum(0, self.total_mem_per_server[src_server_idx] - self.problem.p_mem[src_server_idx])
 		self.constraintViolations["mem"][dst_server_idx] = np.maximum(0, self.total_mem_per_server[dst_server_idx] - self.problem.p_mem[dst_server_idx])
-        
+
 		pc_src_after = self._get_power_for_server(src_server_idx)
 		pc_dst_after = self._get_power_for_server(dst_server_idx)
-        
+
 		power_delta = (pc_src_after + pc_dst_after) - (pc_src_before + pc_dst_before)
 		self.objectives["power_consumption"] += power_delta
 
