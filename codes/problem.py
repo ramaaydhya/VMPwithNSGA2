@@ -38,8 +38,8 @@ class Problem:
 		self.v_cpu = np.array([vm['v_cpu'] for vm in data['vms']])
 		self.v_mem = np.array([vm['v_mem'] for vm in data['vms']])
 
-		self.T_matrix = np.array(data['traffic_matrix'])
-		self.C_matrix = np.array(data['cost_matrix'])
+		self.T_matrix = np.array(data['T_matrix'])
+		self.C_matrix = np.array(data['C_matrix'])
 
 		self.e_vector = np.array(data['e_vector'])
 		self.g_vector = np.array(data['g_vector'])
