@@ -2,11 +2,10 @@ import numpy as np
 from abc import ABC, abstractmethod
 from typing import List, Dict, Union
 
-from nsga2 import NSGA2
 from problem import Problem
 
 class Individual(ABC):
-	def __init__(self, algorithm: NSGA2, problem: Problem):
+	def __init__(self, algorithm, problem: Problem):
 		self.algorithm = algorithm
 		self.problem = problem
 
@@ -141,7 +140,7 @@ class Individual(ABC):
 		U_j_cpu = cpu_usage / (p_cpu_j + epsilon)
 		return (PC_max_j - PC_idle_j) * U_j_cpu + PC_idle_j
 
-	def deltaUpdate_CPU_Mem_Server(self, vm_idx: int, src_server_idx: int, dst_server_idx: int):
+	def deltaUpdate_CPU_Mem_Power(self, vm_idx: int, src_server_idx: int, dst_server_idx: int):
 		v_cpu_i = self.problem.v_cpu[vm_idx]
 		v_mem_i = self.problem.v_mem[vm_idx]
 
