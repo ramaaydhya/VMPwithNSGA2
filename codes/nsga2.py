@@ -64,7 +64,7 @@ class NSGA2(ABC):
 
 	def fastNonDominatedSort(self, population):
 		population.fronts = [[]]
-  		for individual in population:
+		for individual in population:
 			individual.dominationCount = 0
 			individual.dominatedSolutions = []
 			for other in population:
