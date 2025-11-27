@@ -24,7 +24,7 @@ class IndividualClassic(Individual):
 		if old_server_idx == new_server_idx:
 			return
 
-		self.deltaUpdate_CPU_Mem_Server(vm_idx, old_server_idx, new_server_idx)
+		self.deltaUpdate_CPU_Mem_Power(vm_idx, old_server_idx, new_server_idx)
         
 		self.chromosome_list[vm_idx] = new_server_idx
 		self.server_map[old_server_idx].remove(vm_idx)

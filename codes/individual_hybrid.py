@@ -35,7 +35,7 @@ class IndividualHybrid(Individual):
 
 		self.vm_to_server_map[vm_idx] = new_server_idx
 		
-		self.calculateConstraints_Net()
-		self.calculateObjectives_Net()
+		self.calculateConstraint_Net()
+		self.calculateObjective_Net()
 		
 		self.updateConstraintStatus()
