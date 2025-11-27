@@ -51,6 +51,9 @@ class NSGA2Classic(NSGA2):
 
 		prob_per_gene = 1.0 / self.problem.N_V
 
+		current_server = None
+		new_server = None
+		
 		for vm_idx in range(self.problem.N_V):
 			if random.random() <= prob_per_gene:
 				current_server = individual.chromosome_list[vm_idx]
