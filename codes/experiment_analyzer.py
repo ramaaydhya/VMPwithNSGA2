@@ -1,7 +1,9 @@
 import copy
 import json
 import numpy as np
+import os
 import pandas as pd
+
 
 from performance_metrics import PerformanceMetrics # Asumsi file metrics.py sudah ada
 from population import Population
