@@ -246,32 +246,32 @@ def run_pipeline():
 					analyzer.addResult('Hybrid', f"{scen_name}_r{r}", ah.population, save_path=csv_h)
 			print(" Done.")
 
-	# --- D. METRICS ---
-	if ENABLE_NSGA:
-		print("\n--- 📊 Computing Metrics ---")
-		# Load ulang semua CSV dari Drive (Termasuk yg lama)
-		raw_root = os.path.join(LOCAL_RESULTS_DIR, "raw_fronts")
-		if os.path.exists(raw_root):
-			analyzer.loadResultsFromDirectory(raw_root)
+		# --- D. METRICS ---
+		if ENABLE_NSGA:
+			print("\n--- 📊 Computing Metrics ---")
+			# Load ulang semua CSV dari Drive (Termasuk yg lama)
+			raw_root = os.path.join(LOCAL_RESULTS_DIR, "raw_fronts")
+			if os.path.exists(raw_root):
+				analyzer.loadResultsFromDirectory(raw_root)
 
-		final_stats = analyzer.computeMetrics()
-		
-		# Print & Save
-		print("\n=== SUMMARY ===")
-		flat = []
-		for algo in ['Classic', 'Hybrid']:
-			if final_stats[algo]:
-				hv = np.mean([x['hv'] for x in final_stats[algo]])
-				igd = np.mean([x['igd_plus'] for x in final_stats[algo]])
-				print(f"[{algo}] HV={hv:.4f}, IGD+={igd:.4f}")
-				
-				for idx, m in enumerate(final_stats[algo]):
-					m.update({'Algorithm': algo, 'RunID': idx})
-					flat.append(m)
-		
-		if flat:
-			pd.DataFrame(flat).to_csv(os.path.join(LOCAL_RESULTS_DIR, 'final_metrics.csv'), index=False)
-			print("✅ Metrics saved to Drive.")
+			final_stats = analyzer.computeMetrics()
+			
+			# Print & Save
+			print("\n=== SUMMARY ===")
+			flat = []
+			for algo in ['Classic', 'Hybrid']:
+				if final_stats[algo]:
+					hv = np.mean([x['hv'] for x in final_stats[algo]])
+					igd = np.mean([x['igd_plus'] for x in final_stats[algo]])
+					print(f"[{algo}] HV={hv:.4f}, IGD+={igd:.4f}")
+					
+					for idx, m in enumerate(final_stats[algo]):
+						m.update({'Algorithm': algo, 'RunID': idx})
+						flat.append(m)
+			
+			if flat:
+				pd.DataFrame(flat).to_csv(os.path.join(LOCAL_RESULTS_DIR, 'final_metrics.csv'), index=False)
+				print("✅ Metrics saved to Drive.")
 
 if __name__ == "__main__":
 	run_pipeline()
