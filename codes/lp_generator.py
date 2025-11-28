@@ -116,7 +116,7 @@ def create_VMP_MOMILP_File(problem, output_filename=None):
 		for j in server_indices:
 			for i in vm_indices:
 				if e_vector[i] > 0:
-					server_traffic_expr[j].append(e_vector[i] * x[i,j])
+					server_traffic_expr[j].append(e_vector[i] * x_vars[i,j])
 
 		# Step C: Internal Traffic (VM <-> VM)
 		# Kita manfaatkan w_indices yang sudah sparse
@@ -125,15 +125,15 @@ def create_VMP_MOMILP_File(problem, output_filename=None):
 			if j != l:
 				traffic_val = T_matrix[i,k]
 				# Trafik membebani Server j (karena VM i ada di situ)
-				server_traffic_expr[j].append(traffic_val * w[i,j,k,l])
+				server_traffic_expr[j].append(traffic_val * w_vars[i,j,k,l])
 				# Trafik membebani Server l (karena VM k ada di situ)
-				server_traffic_expr[l].append(traffic_val * w[i,j,k,l])
+				server_traffic_expr[l].append(traffic_val * w_vars[i,j,k,l])
 
 		# Step D: Add Constraint to Model
 		for j in server_indices:
 			if server_traffic_expr[j]: # Hanya jika ada trafik
 				model.addConstr(
-					gp.quicksum(server_traffic_expr[j]) <= p_net[j] * y[j],
+					gp.quicksum(server_traffic_expr[j]) <= p_net[j] * y_vars[j],
 					name=f"V4_NetCap_{j}")
 
 		# Define constraint (V5')
