@@ -62,7 +62,7 @@ class NSGA2Hybrid(NSGA2):
 		self._reinsert_vms(offspring_server_map, unplaced_vms)
 
 		# Construct offspring
-		offspring = IndividualHybrid(self, self.problem, offspring_server_map)	
+		offspring = IndividualHybrid(self.problem, offspring_server_map)	
 		offspring.evaluateFull()
 		return offspring
 
@@ -122,7 +122,7 @@ class NSGA2Hybrid(NSGA2):
 				server_map[server_idx] = []
 			server_map[server_idx].append(vm_idx)	
 
-		return IndividualHybrid(self, self.problem, server_map)
+		return IndividualHybrid(self.problem, server_map)
 
 	def _reinsert_vms(self, server_map, unplaced_vms):		
 		current_cpu = {s: 0 for s in range(self.problem.N_P)}

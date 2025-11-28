@@ -37,8 +37,8 @@ class NSGA2Classic(NSGA2):
 			else:	
 				chromosome_2[vm_idx] = worse_parent.chromosome_list[vm_idx]
 
-		offspring_1 = IndividualClassic(self, self.problem, chromosome_1)
-		offspring_2 = IndividualClassic(self, self.problem, chromosome_2)
+		offspring_1 = IndividualClassic(self.problem, chromosome_1)
+		offspring_2 = IndividualClassic(self.problem, chromosome_2)
 
 		offspring_1.evaluateFull()
 		offspring_2.evaluateFull()
@@ -69,4 +69,4 @@ class NSGA2Classic(NSGA2):
 			self.repair(individual)			
 
 	def _create_individual_from_list(self, chromosome_list):
-		return IndividualClassic(self, self.problem, chromosome_list)
+		return IndividualClassic(self.problem, chromosome_list)

@@ -1,7 +1,8 @@
-import random
-import copy
-import numpy as np
 from abc import ABC, abstractmethod
+import copy
+import gc
+import numpy as np
+import random
 import sys
 
 # Asumsi import kelas lain
@@ -93,6 +94,8 @@ class NSGA2(ABC):
 			# 5. Reproduction
 			self.log("  > Reproduction: Tournament -> Crossover -> Mutation", verbose)
 			offspring = self.createOffspring(self.population, verbose)
+
+			gc.collect()
 
 		self.log("\n[NSGA-II] Optimization Finished.", verbose)
 

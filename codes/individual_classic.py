@@ -2,8 +2,8 @@ from individual import Individual
 
 class IndividualClassic(Individual):
 
-	def __init__(self, algorithm, problem, chromosome_list):
-		super().__init__(algorithm, problem)
+	def __init__(self, problem, chromosome_list):
+		super().__init__(problem)
 		self.chromosome_list = chromosome_list
 		self.syncRepresentations()
 

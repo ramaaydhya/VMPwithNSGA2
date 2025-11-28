@@ -2,8 +2,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 class Individual(ABC):
-	def __init__(self, algorithm, problem):
-		self.algorithm = algorithm
+	def __init__(self, problem):
 		self.problem = problem
 
 		# NSGA attributes

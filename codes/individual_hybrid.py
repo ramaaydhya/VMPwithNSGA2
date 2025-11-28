@@ -1,8 +1,8 @@
 from individual import Individual
 
 class IndividualHybrid(Individual):
-	def __init__(self, algorithm, problem, server_map):
-		super().__init__(algorithm, problem)
+	def __init__(self, problem, server_map):
+		super().__init__(problem)
 		self.server_map = server_map
 		self.vm_to_server_map: List[int] = [0] * self.problem.N_V
 		self.syncRepresentations()
