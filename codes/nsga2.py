@@ -221,6 +221,7 @@ class NSGA2(ABC):
 		for _ in range(self.populationSize):
 			chromosome_list = self._generate_chromosome_random_first_fit()
 			ind = self._create_individual_from_list(chromosome_list)
+			ind.evaluateFull()
 			self.population.append(ind)
 
 	def _generate_chromosome_random_first_fit(self) -> list:
