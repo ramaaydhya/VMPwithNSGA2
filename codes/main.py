@@ -3,263 +3,162 @@ import sys
 import shutil
 import pandas as pd
 import numpy as np
-import time
-import subprocess
-import json
-import gurobipy as gp
-import glob
-
 # Import Modul dari Repo
-# Pastikan Sel 1 (Clone) sudah dijalankan
-if '/content/VMPwithNSGA2/codes' not in sys.path:
-	sys.path.append('/content/VMPwithNSGA2/codes')
-
 from problem_generator import generateProblem
 from problem import Problem
 from lp_generator import create_VMP_MOMILP_File
+from pamilo_runner import PaMILORunner
 from analyzer import ExperimentAnalyzer
 from nsga2_classic import NSGA2Classic
 from nsga2_hybrid import NSGA2Hybrid
+import gurobipy as gp
 
-# --- KONFIGURASI PATH ---
-REPO_ROOT = '/content/VMPwithNSGA2'
-BIN_PATH = os.path.join(REPO_ROOT, 'bin', 'pamilo_cli')
-
-LOCAL_DATASET_DIR = os.path.join(REPO_ROOT, 'dataset')
-LOCAL_RESULTS_DIR = os.path.join(REPO_ROOT, 'results')
-DRIVE_RESULTS_DIR = '/content/drive/MyDrive/Skripsi/results'
-
-# --- SWITCH KONTROL ---
-ENABLE_PAMILO = True
-ENABLE_NSGA   = True
-
-# --- CLASS RUNNER FIXED (Override) ---
-class PaMILORunnerFixed:
-	def __init__(self, exec_path):
-		self.exec_path = exec_path
-
-	def solve(self, input_lp, output_base_arg, timeout_sec=3600):
-		if not os.path.exists(self.exec_path):
-			print(f"   [Error] Binary not found: {self.exec_path}")
-			return False, None
-
-		os.makedirs(os.path.dirname(output_base_arg), exist_ok=True)
-		threads = os.cpu_count() or 2
+def setup_environment():
+	# 1. Mount Drive
+	from google.colab import drive
+	drive.mount('/content/drive')
+	
+	# 2. Setup Path
+	BASE_PATH = '/content/drive/MyDrive/Skripsi'
+	# Pastikan folder ini ada
+	DATASET_DIR = os.path.join(BASE_PATH, 'dataset')
+	RESULTS_DIR = os.path.join(BASE_PATH, 'results')
+	
+	# Buat folder jika belum ada
+	os.makedirs(DATASET_DIR, exist_ok=True)
+	os.makedirs(os.path.join(RESULTS_DIR, 'lp_files'), exist_ok=True)
+	os.makedirs(os.path.join(RESULTS_DIR, 'pamilo_sols'), exist_ok=True)
+	os.makedirs(os.path.join(RESULTS_DIR, 'raw_fronts'), exist_ok=True) # Folder baru untuk CSV
+	
+	# 3. Setup License & Binary
+	os.environ["GRB_LICENSE_FILE"] = os.path.join(BASE_PATH, 'gurobi.lic')
+	
+	# Pastikan binary executable
+	pamilo_bin = os.path.join(BASE_PATH, 'bin', 'pamilo_cli')
+	if os.path.exists(pamilo_bin):
+		os.chmod(pamilo_bin, 0o755)
 		
-		cmd = [self.exec_path, input_lp, "-o", output_base_arg, "-t", str(threads)]
-		
-		print(f"   [PaMILO] Executing...")
-		start = time.time()
-		
-		try:
-			res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_sec)
-			elapsed = time.time() - start
-			
-			# Prediksi nama file (PaMILO menambah _sol.json)
-			expected_file = output_base_arg + "_sol.json"
-			
-			if res.returncode == 0 and os.path.exists(expected_file):
-				print(f"   [PaMILO] Success ({elapsed:.1f}s). File: {os.path.basename(expected_file)}")
-				return True, expected_file
-			else:
-				# Cek Stdout fallback
-				content = res.stdout.strip()
-				if content.startswith("{") and content.endswith("}"):
-					with open(expected_file, 'w') as f: f.write(content)
-					print(f"   [PaMILO] Recovered JSON from stdout.")
-					return True, expected_file
+	return DATASET_DIR, RESULTS_DIR, pamilo_bin
 
-				print(f"   [PaMILO] Failed. Code: {res.returncode}")
-				return False, None
-				
-		except subprocess.TimeoutExpired:
-			print(f"   [PaMILO] Timeout ({timeout_sec}s)")
-			return False, None
-		except Exception as e:
-			print(f"   [PaMILO] Crash: {e}")
-			return False, None
+def run_experiment_pipeline():
+	DATASET_DIR, RESULTS_DIR, PAMILO_EXE = setup_environment()
 
-def setup_dependencies():
-	print("\n--- 🔧 Setup Dependencies ---")
-	
-	# 1. Cek Lisensi
-	lic_paths = [os.path.join(REPO_ROOT, 'gurobi.lic'), '/content/drive/MyDrive/Skripsi/gurobi.lic']
-	lic_found = False
-	for lic in lic_paths:
-		if os.path.exists(lic):
-			os.environ["GRB_LICENSE_FILE"] = lic
-			print(f"🔑 Lisensi: {lic}")
-			lic_found = True
-			break
-	if not lic_found:
-		print("❌ FATAL: File 'gurobi.lic' tidak ditemukan!")
-		return False
-
-	# 2. Fix Library Path (LD_LIBRARY_PATH)
-	import gurobipy
-	gurobi_home = os.path.dirname(gurobipy.__file__)
-	# Cari di folder instalasi dan subfolder .libs
-	potential_libs = [os.path.join(gurobi_home, '.libs'), gurobi_home]
-	
-	lib_injected = False
-	for lib_dir in potential_libs:
-		if os.path.exists(lib_dir) and any("libgurobi" in f for f in os.listdir(lib_dir)):
-			current_ld = os.environ.get('LD_LIBRARY_PATH', '')
-			os.environ['LD_LIBRARY_PATH'] = f"{lib_dir}:{current_ld}"
-			print(f"🔧 Library Path Injected: {lib_dir}")
-			lib_injected = True
-			break
-	
-	if not lib_injected:
-		print("⚠️ Warning: Library Gurobi (.so) tidak ditemukan otomatis.")
-
-	# 3. Validasi Gurobi
-	try:
-		gp.Model("check").optimize()
-		print("✅ Gurobi Active!")
-	except:
-		print("❌ Gurobi Activation Failed.")
-		return False
-
-	# 4. Izin Binary
-	if os.path.exists(BIN_PATH):
-		os.chmod(BIN_PATH, 0o755)
-		print(f"✅ Binary Ready.")
-	else:
-		print(f"❌ Binary not found at {BIN_PATH}")
-		return False
-
-	return True
-
-def prepare_directories():
-	"""Symlink hasil ke Drive."""
-	os.makedirs(DRIVE_RESULTS_DIR, exist_ok=True)
-	if os.path.exists(LOCAL_RESULTS_DIR):
-		if os.path.islink(LOCAL_RESULTS_DIR): os.unlink(LOCAL_RESULTS_DIR)
-		else: shutil.rmtree(LOCAL_RESULTS_DIR)
-	os.symlink(DRIVE_RESULTS_DIR, LOCAL_RESULTS_DIR)
-	
-	os.makedirs(LOCAL_DATASET_DIR, exist_ok=True)
-	os.makedirs(os.path.join(LOCAL_RESULTS_DIR, 'lp_files'), exist_ok=True)
-	os.makedirs(os.path.join(LOCAL_RESULTS_DIR, 'pamilo_sols'), exist_ok=True)
-	# Folder baru untuk raw fronts
-	os.makedirs(os.path.join(LOCAL_RESULTS_DIR, 'raw_fronts'), exist_ok=True)
-
-def run_pipeline():
-	prepare_directories()
-	if not setup_dependencies(): return
-	
-	pamilo = PaMILORunnerFixed(BIN_PATH)
+	# Inisialisasi Tools
+	pamilo_runner = PaMILORunner(PAMILO_EXE)
 	analyzer = ExperimentAnalyzer()
 
-	# --- A. GENERATE PROBLEM ---
-	if not os.listdir(LOCAL_DATASET_DIR):
+	# --- FITUR RESUME: LOAD DATA LAMA DARI DRIVE ---
+	RAW_FRONTS_DIR = os.path.join(RESULTS_DIR, 'raw_fronts')
+	analyzer.loadResultsFromDirectory(RAW_FRONTS_DIR)
+
+	# --- TAHAP 1: GENERATE PROBLEM ---
+	if not os.listdir(DATASET_DIR):
 		print("\n--- Generating Datasets ---")
 		for i in range(1, 6):
-			generateProblem(os.path.join(LOCAL_DATASET_DIR, f"small_{i}.json"), 'small', i)
-			generateProblem(os.path.join(LOCAL_DATASET_DIR, f"large_{i}.json"), 'large', 100+i)
-	
-	# --- B. SORT FILES (Small First) ---
-	all_f = [f for f in os.listdir(LOCAL_DATASET_DIR) if f.endswith(".json")]
-	problem_files = sorted([f for f in all_f if 'small' in f]) + sorted([f for f in all_f if 'large' in f])
+			generateProblem(os.path.join(DATASET_DIR, f"small_{i}.json"), 'small', i)
+			generateProblem(os.path.join(DATASET_DIR, f"large_{i}.json"), 'large', 100+i)
 
-	print(f"\n[Schedule] Processing {len(problem_files)} scenarios...")
+	# --- TAHAP 2: LOOP EKSPERIMEN ---
+	problem_files = sorted([f for f in os.listdir(DATASET_DIR) if f.endswith(".json")])
 
-	# --- C. LOOP EKSPERIMEN ---
-	for p_file in problem_files:
-		scen_name = p_file.replace(".json", "")
-		full_path = os.path.join(LOCAL_DATASET_DIR, p_file)
+	# Prioritaskan Small
+	small_files = [f for f in problem_files if 'small' in f]
+	large_files = [f for f in problem_files if 'large' in f]
+	sorted_files = small_files + large_files
+
+	for p_file in sorted_files:
+		scenario_name = p_file.replace(".json", "")
+		full_path = os.path.join(DATASET_DIR, p_file)
 		
-		print(f"\n{'='*40}\n>>> SCENARIO: {scen_name}\n{'='*40}")
-		
+		print(f"\n>>> SCENARIO: {scenario_name}")
 		problem = Problem()
 		problem.loadFromFile(full_path)
 
-		# 1. PaMILO (Hanya Small)
-		if ENABLE_PAMILO and 'small' in scen_name:
-			lp_path = os.path.join(LOCAL_RESULTS_DIR, "lp_files", f"{scen_name}.lp")
-			pamilo_out_base = os.path.join(LOCAL_RESULTS_DIR, "pamilo_sols", scen_name)
-			expected_json = pamilo_out_base + "_sol.json"
+		# A. PaMILO (Small Only)
+		if 'small' in scenario_name:
+			lp_path = os.path.join(RESULTS_DIR, "lp_files", f"{scenario_name}.lp")
+			# Base path tanpa ekstensi json (PaMILO nambah sendiri)
+			sol_base = os.path.join(RESULTS_DIR, "pamilo_sols", scenario_name)
+			expected_sol = sol_base + "_sol.json"
 
 			if not os.path.exists(lp_path):
 				create_VMP_MOMILP_File(problem, lp_path)
 			
-			if not os.path.exists(expected_json):
-				success, final_path = pamilo.solve(lp_path, pamilo_out_base, timeout_sec=3600)
+			if not os.path.exists(expected_sol):
+				print(f"   [PaMILO] Solving...")
+				success = pamilo_runner.solve(lp_path, sol_base, timeout_sec=3600)
 			else:
-				print("   [PaMILO] Solution exists. Loading...")
-				success, final_path = True, expected_json
+				print("   [PaMILO] Found existing solution.")
+				success = True
 			
-			if success and final_path:
-				analyzer.loadPamiloReference(final_path)
-		
-		# 2. NSGA-II
-		if ENABLE_NSGA:
-			TOTAL_RUNS = 30
-			print(f"   [NSGA] 30 Runs...")
-			
-			# Siapkan folder simpan per skenario
-			raw_dir = os.path.join(LOCAL_RESULTS_DIR, "raw_fronts", scen_name)
-			os.makedirs(raw_dir, exist_ok=True)
+			if success: analyzer.loadPamiloReference(expected_sol)
 
-			for r in range(TOTAL_RUNS):
-				# Cek jika file sudah ada (Resume capability)
-				csv_c = os.path.join(raw_dir, f"Classic_r{r}.csv")
-				csv_h = os.path.join(raw_dir, f"Hybrid_r{r}.csv")
+		# B. NSGA-II (30 Runs)
+		TOTAL_RUNS = 30
+		
+		# Siapkan folder untuk menyimpan CSV per run
+		current_raw_dir = os.path.join(RAW_FRONTS_DIR, scenario_name)
+		
+		print(f"   [NSGA] Processing {TOTAL_RUNS} runs...")
+		
+		for run_id in range(TOTAL_RUNS):
+			run_key = f"{scenario_name}_r{run_id}"
+			
+			# Cek apakah Run ini SUDAH ADA di analyzer (berarti sudah diload dari Drive)
+			# Jika sudah ada dan datanya tidak kosong, Skip.
+			if (run_key in analyzer.results['Classic'] and 
+				len(analyzer.results['Classic'][run_key]) > 0 and
+				run_key in analyzer.results['Hybrid'] and
+				len(analyzer.results['Hybrid'][run_key]) > 0):
 				
-				if os.path.exists(csv_c) and os.path.exists(csv_h):
-					if (r+1)%5==0: print(f" [Skip {r+1}]", end="")
-					continue
+				# print(f"	 > Run {run_id} Skipped (Done)", end="\r")
+				continue
 
-				seed = 1000 + (int(''.join(filter(str.isdigit, scen_name)) or 0)*100) + r
-				print(f"\r   Run {r+1}/{TOTAL_RUNS}: ", end="")
-
-				# Classic
-				if not os.path.exists(csv_c):
-					print("C", end="", flush=True)
-					alg_c = NSGA2Classic(problem, 100, 100, 0.9, 0.1)
-					alg_c.setSeed(seed)
-					alg_c.run(verbose=False)
-					analyzer.addResult('Classic', f"{scen_name}_r{r}", alg_c.population, save_path=csv_c)
-				
-				# Hybrid
-				if not os.path.exists(csv_h):
-					print(" | H", end="", flush=True)
-					alg_h = NSGA2Hybrid(problem, 100, 100, 0.9, 0.1)
-					alg_h.setSeed(seed)
-					alg_h.run(verbose=False)
-					analyzer.addResult('Hybrid', f"{scen_name}_r{r}", alg_h.population, save_path=csv_h)
-			print(" Done.")
-
-	# --- D. METRICS ---
-	if ENABLE_NSGA:
-		print("\n--- 📊 Computing Metrics ---")
-		
-		# LOAD ULANG DARI DRIVE (Agar data lama terhitung)
-		raw_root = os.path.join(LOCAL_RESULTS_DIR, "raw_fronts")
-		if os.path.exists(raw_root):
-			analyzer.loadResultsFromDirectory(raw_root)
+			print(f"\r	 > Run {run_id+1}/{TOTAL_RUNS} Running...", end="")
 			
-		final_stats = analyzer.computeMetrics()
-		
-		# Save CSV Summary
-		flat = []
-		for algo in ['Classic', 'Hybrid']:
-			for idx, m in enumerate(final_stats[algo]):
-				m.update({'Algorithm': algo, 'RunID': idx})
-				flat.append(m)
-		
-		if flat:
-			pd.DataFrame(flat).to_csv(os.path.join(LOCAL_RESULTS_DIR, 'final_metrics.csv'), index=False)
-			print("✅ Metrics saved to Drive.")
+			# Seed
+			base_seed = int(''.join(filter(str.isdigit, scenario_name)) or 0)
+			seed = 1000 + (base_seed * 100) + run_id
 
-		# Summary Print
-		print("\n=== SUMMARY RESULT ===")
-		for algo in ['Classic', 'Hybrid']:
-			if final_stats[algo]:
-				hv = np.mean([x['hv'] for x in final_stats[algo]])
-				igd = np.mean([x['igd_plus'] for x in final_stats[algo]])
-				print(f"[{algo}] Avg HV={hv:.4f}, Avg IGD+={igd:.4f}")
+			# -- CLASSIC --
+			# Cek file CSV individu dulu (double check)
+			csv_classic = os.path.join(current_raw_dir, f"Classic_r{run_id}.csv")
+			if not os.path.exists(csv_classic):
+				algo_c = NSGA2Classic(problem, 100, 100, 0.9, 0.1)
+				algo_c.setSeed(seed)
+				algo_c.run()
+				# SIMPAN KE DRIVE
+				analyzer.addResult('Classic', run_key, algo_c.population, save_path=csv_classic)
+
+			# -- HYBRID --
+			csv_hybrid = os.path.join(current_raw_dir, f"Hybrid_r{run_id}.csv")
+			if not os.path.exists(csv_hybrid):
+				algo_h = NSGA2Hybrid(problem, 100, 100, 0.9, 0.1)
+				algo_h.setSeed(seed)
+				algo_h.run()
+				# SIMPAN KE DRIVE
+				analyzer.addResult('Hybrid', run_key, algo_h.population, save_path=csv_hybrid)
+		
+		print(" Done.")
+
+	# --- TAHAP 3: METRICS & SUMMARY ---
+	print("\n--- Calculating Final Metrics ---")
+	final_stats = analyzer.computeMetrics()
+	
+	# Save to CSV (Summary)
+	flat_data = []
+	for algo in ['Classic', 'Hybrid']:
+		if algo in final_stats:
+			for m in final_stats[algo]:
+				row = m.copy()
+				row['Algorithm'] = algo
+				flat_data.append(row)
+	
+	if flat_data:
+		df_res = pd.DataFrame(flat_data)
+		summary_path = os.path.join(RESULTS_DIR, 'final_metrics_summary.csv')
+		df_res.to_csv(summary_path, index=False)
+		print(f"[DONE] Summary saved to {summary_path}")
 
 if __name__ == "__main__":
-	run_pipeline()
+	run_experiment_pipeline()
