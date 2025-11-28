@@ -75,8 +75,6 @@ class NSGA2Hybrid(NSGA2):
 		server_to_kill = random.choice(active_servers)
 		# Collect every VMs inside it
 		vms_to_move = list(individual.server_map[server_to_kill])
-		# Empty the server
-		individual.server_map[server_to_kill] = []
 
 		# Migrate these VMs:
 		# Pick random VM
