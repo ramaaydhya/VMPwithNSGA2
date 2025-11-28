@@ -1,6 +1,7 @@
+import copy
 import json
 import numpy as np
-import copy
+import pandas as pd
 
 from performance_metrics import PerformanceMetrics # Asumsi file metrics.py sudah ada
 from population import Population
@@ -23,25 +24,37 @@ class ExperimentAnalyzer:
 		self.min_objectives = None
 		self.max_objectives = None
 
-	def addResult(self, algo_name, run_id, population):
+	def addResult(self, algo_name, run_id, population: Population, save_path=None):
 		"""
-		Menambahkan hasil akhir populasi dari NSGA-II.
-		Hanya mengambil solusi Rank 0 (Non-dominated) dari run tersebut.
+		Menambahkan hasil, ekstrak Pareto Front, dan SIMPAN ke file jika path diberikan.
 		"""
 		front_data = []
-		# Population is iterable  
-		for individual in population:
-			# Extract nondominated solutions from the population
+		
+		# 1. Ekstrak Objektif dari Individu Rank 0 (Non-Dominated)
+		# Handle jika population adalah object atau list
+		inds = population.individuals if hasattr(population, 'individuals') else population
+		
+		for individual in inds:
 			if individual.frontRank == 0:
 				obj_1 = individual.objectives['power_consumption']
 				obj_2 = individual.objectives['net_communication']
 				front_data.append([obj_1, obj_2])
 		
-		# Save as np.array
-		if front_data:
-			self.results[algo_name][run_id] = np.array(front_data)
-		else:
-			self.results[algo_name][run_id] = np.empty((0, 2))
+		# Konversi ke Numpy Array
+		front_arr = np.array(front_data) if front_data else np.empty((0, 2))
+		
+		# 2. Simpan ke Memory (RAM)
+		self.results[algo_name][run_id] = front_arr
+
+		# 3. SIMPAN KE FILE (DRIVE) - Fitur Baru
+		if save_path:
+			# Pastikan folder ada
+			os.makedirs(os.path.dirname(save_path), exist_ok=True)
+			
+			# Simpan sebagai CSV: Power, Net
+			df = pd.DataFrame(front_arr, columns=['Power', 'Net'])
+			df.to_csv(save_path, index=False)
+			print(f"   [Saved] {os.path.basename(save_path)}")
 
 	def loadPamiloReference(self, filepath):
 		"""
