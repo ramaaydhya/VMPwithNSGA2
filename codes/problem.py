@@ -1,6 +1,7 @@
 import numpy as np
 import json
 
+
 class Problem:
 	def __init__(self):
 		N_V: int = 0
@@ -8,14 +9,14 @@ class Problem:
 
 		v_cpu: np.ndarray = None
 		v_mem: np.ndarray = None
-		
+
 		p_cpu: np.ndarray = None
 		p_mem: np.ndarray = None
 		p_net: np.ndarray = None
-		
+
 		PC_max: np.ndarray = None
 		PC_idle: np.ndarray = None
-		
+
 		T_matrix: np.ndarray = None
 		C_matrix: np.ndarray = None
 		e_vector: np.ndarray = None
@@ -32,8 +33,10 @@ class Problem:
 		self.p_mem = np.array([server['p_mem'] for server in data['servers']])
 		self.p_net = np.array([server['p_net'] for server in data['servers']])
 
-		self.PC_idle = np.array([server['pc_idle'] for server in data['servers']])
-		self.PC_max = np.array([server['pc_max'] for server in data['servers']])
+		self.PC_idle = np.array([server['pc_idle']
+								 for server in data['servers']])
+		self.PC_max = np.array([server['pc_max']
+								for server in data['servers']])
 
 		self.v_cpu = np.array([vm['v_cpu'] for vm in data['vms']])
 		self.v_mem = np.array([vm['v_mem'] for vm in data['vms']])
